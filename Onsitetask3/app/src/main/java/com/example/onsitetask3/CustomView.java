@@ -29,7 +29,7 @@ public class CustomView extends View {
         blackStroke = new Paint();
         blackStroke.setColor(Color.BLACK);
         blackStroke.setStyle(Paint.Style.STROKE);
-        blackStroke.setStrokeWidth(8);
+        blackStroke.setStrokeWidth(30);
         blackStroke.setAntiAlias(true);
 
         firstTime = true;
@@ -65,27 +65,16 @@ public class CustomView extends View {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                if(xPosInitial > left + 30 && xPosInitial < right - 30 && yPosInitial > top + 30 && yPosInitial < bottom - 30) {
-                    xPosFinal = event.getX();
-                    yPosFinal = event.getY();
-
-                    delX = xPosFinal - xPosInitial;
-                    delY = yPosFinal - yPosInitial;
-
-                    left += delX;
-                    right += delX;
-                    top += delY;
-                    bottom += delY;
-
-                    xPosInitial = xPosFinal;
-                    yPosInitial = yPosFinal;
-
-                    invalidate();
-
-                }
-                resize(event);
+                drag(event);
+                resizeCorner(event);
+                resizeEdge(event);
                 rect = new Rect((int)left, (int)top, (int)right, (int)bottom);
+                Log.d(TAG, "resizeCorner: top " + top + " - left: " + left + "- right: " + right + "- bottom:" + bottom);
                 break;
+
+            case MotionEvent.ACTION_UP:
+                updateVertices();
+                Log.d(TAG, "resizeCorner: top " + top + " - left: " + left + "- right: " + right + "- bottom:" + bottom);
 
             default:
                 super.onTouchEvent(event);
@@ -95,39 +84,116 @@ public class CustomView extends View {
 
     }
 
-    public void resize(MotionEvent event) {
+    public void drag(MotionEvent event) {
+        if(xPosInitial > left + 30 && xPosInitial < right - 30 && yPosInitial > top + 30 && yPosInitial < bottom - 30) {
+            updatePosition(event);
+
+            left += delX;
+            right += delX;
+            top += delY;
+            bottom += delY;
+
+            xPosInitial = xPosFinal;
+            yPosInitial = yPosFinal;
+
+            invalidate();
+
+        }
+    }
+
+    public void resizeCorner(MotionEvent event) {
+        
+        boolean cornerResized = false;
+
+        if(xPosInitial >= (left - 30) && xPosInitial <= (left + 30) && yPosInitial >= (top - 30) && yPosInitial <= (top + 30)) {
+            updatePosition(event);
+            left += delX;
+            top += delY;
+            cornerResized = true;
+        }
+        else if(xPosInitial >= (left - 30) && xPosInitial <= (left + 30) && yPosInitial >= (bottom - 30) && yPosInitial <= (bottom + 30)) {
+            updatePosition(event);
+            left += delX;
+            bottom += delY;
+            cornerResized = true;
+        }
+        else if(xPosInitial >= (right - 30) && xPosInitial <= (right + 30) && yPosInitial >= (top - 30) && yPosInitial <= (top + 30)) {
+            updatePosition(event);
+            right += delX;
+            top += delY;
+            cornerResized = true;
+        }
+        else if(xPosInitial >= (right - 30) && xPosInitial <= (right + 30) && yPosInitial >= (bottom - 30) && yPosInitial <= (bottom + 30)) {
+            updatePosition(event);
+            right += delX;
+            bottom += delY;
+            cornerResized = true;
+        }
+
+        if(cornerResized) {
+            xPosInitial = xPosFinal;
+            yPosInitial = yPosFinal;
+        }
+
+        invalidate();
+
+    }
+
+    public void resizeEdge(MotionEvent event) {
+
+        boolean edgeResized = false;
+
+        if(xPosInitial >= (left - 30) && xPosInitial <= (left + 30) && yPosInitial > (top + 30) && yPosInitial < (bottom - 30)) {
+            updatePosition(event);
+            left += delX;
+            edgeResized = true;
+        }
+        else if(xPosInitial >= (right - 30) && xPosInitial <= (right + 30) && yPosInitial > (top + 30) && yPosInitial < (bottom - 30)) {
+            updatePosition(event);
+            right += delX;
+            edgeResized = true;
+        }
+        else if(yPosInitial >= (top - 30) && yPosInitial <= (top + 30) && xPosInitial > (left + 30) && xPosInitial < (right - 30)) {
+            updatePosition(event);
+            top += delY;
+            edgeResized = true;
+        }
+        else if(yPosInitial >= (bottom - 30) && yPosInitial <= (bottom + 30) && xPosInitial > (left + 30) && xPosInitial < (right - 30)) {
+            updatePosition(event);
+            bottom += delY;
+            edgeResized = true;
+        }
+
+        if(edgeResized) {
+            xPosInitial = xPosFinal;
+            yPosInitial = yPosFinal;
+        }
+
+        invalidate();
+
+    }
+
+    public void updatePosition(MotionEvent event) {
         xPosFinal = event.getX();
         yPosFinal = event.getY();
 
         delX = xPosFinal - xPosInitial;
         delY = yPosFinal - yPosInitial;
+    }
 
-        if(xPosInitial >= (left - 30) && xPosInitial <= (left + 30) && yPosInitial >= (top - 30) && yPosInitial <= (top + 30)) {
-            left += delX;
-            top += delY;
-            Log.d(TAG, "resize: topleft");
-        }
-        else if(xPosInitial >= (left - 30) && xPosInitial <= (left + 30) && yPosInitial >= (bottom - 30) && yPosInitial <= (bottom + 30)) {
-            left += delX;
-            bottom += delY;
-            Log.d(TAG, "resize: bottomleft");
-        }
-        else if(xPosInitial >= (right - 30) && xPosInitial <= (right + 30) && yPosInitial >= (top - 30) && yPosInitial <= (top + 30)) {
-            right += delX;
-            top += delY;
-            Log.d(TAG, "resize: topright");
-        }
-        else if(xPosInitial >= (right - 30) && xPosInitial <= (right + 30) && yPosInitial >= (bottom - 30) && yPosInitial <= (bottom + 30)) {
-            right += delX;
-            bottom += delY;
-            Log.d(TAG, "resize: bottomright");
-        }
+    public void updateVertices() {
+        float temp = 0;
 
-        xPosInitial = xPosFinal;
-        yPosInitial = yPosFinal;
-
-        invalidate();
-
+        if(left >= right) {
+            temp = left;
+            left = right;
+            right = temp;
+        }
+        else if(top >= bottom) {
+            temp = top;
+            top = bottom;
+            bottom = temp;
+        }
     }
 
 }
